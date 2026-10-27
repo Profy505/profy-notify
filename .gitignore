@@ -29,7 +29,6 @@ Thumbs.db
 *.log
 
 # Composer
-composer.lock
 
 # Cache and compiled files
 bootstrap/cache/*
