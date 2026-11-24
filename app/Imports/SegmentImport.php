@@ -2,20 +2,8 @@
 
 namespace App\Imports;
 
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\Import;
 
-class SegmentImport implements ToCollection
+class SegmentImport implements Import
 {
-    /**
-     * @param Collection $collection
-     */
-    public function collection(Collection $rows)
-    {
-        $userProfyIds = [];
-        foreach ($rows as $row) {
-            $userProfyIds[] = $row[0];
-        }
-        return $userProfyIds;
-    }
 }

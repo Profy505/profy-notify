@@ -19,9 +19,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('dispatch:monthly-notifications')->everyMinute();
 
         $schedule->job(new DeleteNotificationLogsJob)->everySixHours()->when(function() {
-            return now()->diffInHours(Cache::get('last_notification_cleanup', now()->subHours(24))) >= 24;
+            $lastCleanup = Cache::get('last_notification_cleanup');
+
+            return ! is_int($lastCleanup) || now()->getTimestamp() - $lastCleanup >= 24 * 3600;
         })->then(function() {
-            Cache::put('last_notification_cleanup', now());
+            Cache::put('last_notification_cleanup', now()->getTimestamp());
         });
     }
 

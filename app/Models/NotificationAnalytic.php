@@ -33,7 +33,7 @@ class NotificationAnalytic extends Model
     /**
      * Filter analytics for the current week.
     */
-    public function scopeForWeek($query, Carbon $date = null)
+    public function scopeForWeek($query, ?Carbon $date = null)
     {
         $date = $date ?? Carbon::now();
         return $query->whereBetween('date', [$date->startOfWeek()->toDateString(), $date->endOfWeek()->toDateString()]);
@@ -42,7 +42,7 @@ class NotificationAnalytic extends Model
     /**
      * Filter analytics for the current month.
     */
-    public function scopeForMonth($query, Carbon $date = null)
+    public function scopeForMonth($query, ?Carbon $date = null)
     {
         $date = $date ?? Carbon::now();
         return $query->whereBetween('date', [$date->startOfMonth()->toDateString(), $date->endOfMonth()->toDateString()]);

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SegmentResource\Pages;
 
 use App\Filament\Resources\SegmentResource;
+use App\Imports\SegmentImport;
 use App\Models\Customer;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -34,7 +35,7 @@ class CreateSegment extends CreateRecord
         try {
             $path = storage_path('app/public/' . $file);
 
-            $data = Excel::toArray([], $path);
+            $data = Excel::toArray(new SegmentImport, $path);
 
             if (empty($data) || empty($data[0])) {
                 Notification::make()
