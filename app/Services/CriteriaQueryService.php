@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use App\Enums\OrderStatus;
+use App\Enums\OrderType;
 use Illuminate\Support\Facades\Log;
 
 class CriteriaQueryService
@@ -42,8 +43,8 @@ class CriteriaQueryService
     {
         $orderFilter = function ($q) use ($params, $except) {
             $q->where('status', '!=', OrderStatus::CANCELLED->value)
-                ->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                    $q->where('type', ucfirst($params['additional']['order_type']));
+                ->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
                 })->when(isset($params['additional']['duration']) && $params['additional']['duration'] > 0, function ($q) use ($params) {
                     $q->where('created_at', '>=', Carbon::now()->subDays((int) $params['additional']['duration']));
                 })->when($except, function ($q) use ($except) {
@@ -67,8 +68,8 @@ class CriteriaQueryService
                 ->when(isset($params['additional']['duration']) && $params['additional']['duration'] > 0, function ($q) use ($params) {
                     $q->where('created_at', '>=', Carbon::now()->subDays((int) $params['additional']['duration']));
                 })
-                ->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                    $q->where('type', ucfirst($params['additional']['order_type']));
+                ->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
                 })
                 ->when($except, function ($q) use ($except) {
                     $q->where('id', '!=', $except);
@@ -84,8 +85,8 @@ class CriteriaQueryService
                 ->when(isset($params['additional']['duration']) && $params['additional']['duration'] > 0, function ($q) use ($params) {
                     $q->where('created_at', '>=', Carbon::now()->subDays((int) $params['additional']['duration']));
                 })
-                ->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                    $q->where('type', ucfirst($params['additional']['order_type']));
+                ->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
                 })
                 ->when($except, function ($q) use ($except) {
                     $q->where('id', '!=', $except);
@@ -97,8 +98,8 @@ class CriteriaQueryService
     {
         return $query->withCount(['orders as filtered_orders_count' => function ($q) use ($params, $except) {
             $q->where('status', '!=', OrderStatus::CANCELLED->value)
-                ->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                    $q->where('type', ucfirst($params['additional']['order_type']));
+                ->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
                 })->when(isset($params['additional']['duration']) && $params['additional']['duration'] > 0, function ($q) use ($params) {
                     $q->where('created_at', '>=', Carbon::now()->subDays((int) $params['additional']['duration']));
                 })->when($except, function ($q) use ($except) {
@@ -111,8 +112,8 @@ class CriteriaQueryService
     {
         return $query->withCount(['orders as filtered_orders_count' => function ($q) use ($params, $except) {
             $q->where('status', '!=', OrderStatus::CANCELLED->value)
-                ->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                    $q->where('type', ucfirst($params['additional']['order_type']));
+                ->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
                 })->when(isset($params['additional']['duration']) && $params['additional']['duration'] > 0, function ($q) use ($params) {
                     $q->where('created_at', '>=', Carbon::now()->subDays((int) $params['additional']['duration']));
                 })->when($except, function ($q) use ($except) {
@@ -126,8 +127,8 @@ class CriteriaQueryService
         return $query->whereHas('orders', function ($query) use ($params, $except) {
             $query->where('status', '!=', OrderStatus::CANCELLED->value)
                 ->where('price', '>=', (float) $params['additional']['price'])
-                ->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                    $q->where('type', ucfirst($params['additional']['order_type']));
+                ->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
                 })
                 ->when($except, function ($q) use ($except) {
                     $q->where('id', '!=', $except);
@@ -140,8 +141,8 @@ class CriteriaQueryService
         return $query->whereHas('orders', function ($query) use ($params, $except) {
             $query->where('status', '!=', OrderStatus::CANCELLED->value)
                 ->where('price', '<=', (float) $params['additional']['price'])
-                ->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                    $q->where('type', ucfirst($params['additional']['order_type']));
+                ->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
                 })
                 ->when($except, function ($q) use ($except) {
                     $q->where('id', '!=', $except);
@@ -153,9 +154,9 @@ class CriteriaQueryService
     {
         return $query->whereHas('orders', function ($query) use ($params, $except) {
             $query->when($except, fn($q) => $q->where('id', $except));
-            $query->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                $q->where('type', ucfirst($params['additional']['order_type']));
-            });
+            $query->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
+                });
             $query->whereHas('reviews', function ($q) use ($params) {
                 $q->where('rating', '>', (int) $params['additional']['rating']);
             });
@@ -166,12 +167,22 @@ class CriteriaQueryService
     {
         return $query->whereHas('orders', function ($query) use ($params, $except) {
             $query->when($except, fn($q) => $q->where('id', $except));
-            $query->when(in_array($params['additional']['order_type'], ['handyman', 'cleaner']), function ($q) use ($params) {
-                $q->where('type', ucfirst($params['additional']['order_type']));
-            });
+            $query->when($this->orderType($params), function ($q, string $orderType) {
+                    $q->where('type', ucfirst($orderType));
+                });
             $query->whereHas('reviews', function ($q) use ($params) {
                 $q->where('rating', '<', (int) $params['additional']['rating']);
             });
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    private function orderType(array $params): ?string
+    {
+        $orderType = $params['additional']['order_type'] ?? $params['additional']['type'] ?? null;
+
+        return in_array($orderType, [OrderType::HANDYMAN->value, OrderType::CLEANER->value], true) ? $orderType : null;
     }
 }
